@@ -9,14 +9,15 @@
     body { background: #f8f9fa; }
     .card { margin-top: 40px; }
     #notificationsContainer { margin-top: 15px; }
-    .notif-card { margin-bottom: 10px; }
+    .notif-card { margin-bottom: 10px; flex: 1 1 calc(50% - 10px); }
     .notif-icon { cursor: pointer; position: absolute; top: 10px; right: 15px; font-size: 20px; }
+    #notificationsContainer { display: flex; flex-wrap: wrap; gap: 10px; }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="row justify-content-center">
-    <div class="col-md-5">
+    <div class="col-md-8">
       <!-- Login Card -->
       <div class="card shadow" id="loginCard">
         <div class="card-body">
@@ -116,12 +117,12 @@
       
       filtered.forEach(n => {
         const card = document.createElement("div");
-        card.classList.add("card", "notif-card", "shadow-sm");
+        card.classList.add("card", "notif-card", "shadow-sm", "p-2");
         card.innerHTML = `
-          <div class="card-body">
-            <h6 class="card-title">${n.title}</h6>
-            <p class="card-text">${n.body}</p>
-            ${n.image ? `<img src="${n.image}" style="max-width:100px;">` : ""}
+          <div>
+            <h6><b>${n.title}</b></h6>
+            <p>${n.body}</p>
+            <small class="text-muted">Topic: ${n.topic}</small>
           </div>
         `;
         container.appendChild(card);
@@ -146,6 +147,8 @@
       if (!data.status) return alert("Invalid credentials");
 
       const student = data.result[0];
+      sessionStorage.setItem("student", JSON.stringify(student));
+
       document.getElementById("loginCard").classList.add("d-none");
       const studentCard = document.getElementById("studentCard");
       studentCard.classList.remove("d-none");
@@ -173,6 +176,35 @@
   document.getElementById("notifBtn").addEventListener("click", () => {
     const container = document.getElementById("notificationsContainer");
     container.classList.toggle("d-none");
+  });
+
+  // Auto-login if session exists
+  window.addEventListener("load", () => {
+    const student = JSON.parse(sessionStorage.getItem("student") || null);
+    if (student) {
+      document.getElementById("loginCard").classList.add("d-none");
+      const studentCard = document.getElementById("studentCard");
+      studentCard.classList.remove("d-none");
+
+      const details = document.getElementById("studentDetails");
+      details.innerHTML = `
+        <li class="list-group-item"><b>Name:</b> ${student.student_name}</li>
+        <li class="list-group-item"><b>Father:</b> ${student.father_name}</li>
+        <li class="list-group-item"><b>Mobile:</b> ${student.mobile_no}</li>
+        <li class="list-group-item"><b>Email:</b> ${student.email}</li>
+        <li class="list-group-item"><b>Campus:</b> ${student.campus_name}</li>
+        <li class="list-group-item"><b>Course:</b> ${student.course_name}</li>
+        <li class="list-group-item"><b>Section:</b> ${student.section_name}</li>
+        <li class="list-group-item"><b>Roll No:</b> ${student.roll_no}</li>
+      `;
+
+      const topics = [
+        student.campus_name,
+        student.course_name,
+        student.section_name
+      ].map(s => s.toLowerCase().replace(/\s/g, "_"));
+      fetchNotifications(topics);
+    }
   });
 </script>
 </body>
