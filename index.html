@@ -93,7 +93,7 @@
       ].map(s => s.toLowerCase().replace(/\s/g, "_"));
       console.log("📌 Topics to subscribe:", topics);
 
-      const res = await fetch("https://59405185-0de8-49bf-9e02-a228b0702df3-00-21difm4dvtrej.spock.replit.dev/subscribe", {
+      const res = await fetch("https://375867a042fb.ngrok-free.app/subscribe", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ token, topics, ...student })
@@ -115,7 +115,7 @@
 
     try {
       console.log("🔑 Sending login request:", { studentNo, password });
-      const res = await fetch("https://59405185-0de8-49bf-9e02-a228b0702df3-00-21difm4dvtrej.spock.replit.dev/loginStudent", {
+      const res = await fetch("https://375867a042fb.ngrok-free.app/loginStudent", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ studentNo, password })
