@@ -51,6 +51,9 @@
 
     <!-- Admin Panel Section -->
     <div id="adminPanel" class="d-none">
+      <div class="mb-3 text-end">
+        <button class="btn btn-danger" onclick="logout()">Logout</button>
+      </div>
       <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
         <li class="nav-item">
           <button class="nav-link active" id="topics-tab" data-bs-toggle="tab" data-bs-target="#topics" type="button">📂
@@ -127,76 +130,64 @@
     function login() {
       const user = document.getElementById("username").value.trim();
       const pass = document.getElementById("password").value.trim();
-      console.log("Login attempt:", { user, pass });
 
       if (user === "admin" && pass === "1234") {
-        console.log("✅ Login success");
+        localStorage.setItem("adminLoggedIn", "true");
         document.getElementById("loginCard").classList.add("d-none");
         document.getElementById("adminPanel").classList.remove("d-none");
         loadTopics();
       } else {
-        console.warn("❌ Invalid credentials!");
         alert("❌ Invalid credentials!");
       }
+    }
+
+    function logout() {
+      localStorage.removeItem("adminLoggedIn");
+      document.getElementById("adminPanel").classList.add("d-none");
+      document.getElementById("loginCard").classList.remove("d-none");
     }
 
     // ---------- TOPICS ----------
     async function createTopic() {
       const topic = document.getElementById("topicName").value;
       const description = document.getElementById("description").value;
-      console.log("CreateTopic called with:", { topic, description });
 
       if (!topic || !description) {
-        console.warn("⚠️ Missing fields in createTopic");
         alert("⚠️ Please fill all fields.");
         return;
       }
 
-      console.log("🔄 Sending request to create-topic...");
       try {
         const res = await fetch(`${apiBase}/create-topic`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ topic, description })
         });
-        console.log("📥 Response object:", res);
-
         const data = await res.json();
-        console.log("✅ Response JSON:", data);
-
         alert(data.message);
-        loadTopics();
-
         document.getElementById("topicName").value = "";
         document.getElementById("description").value = "";
+        loadTopics();
       } catch (err) {
-        console.error("❌ Error creating topic:", err);
+        console.error(err);
       }
     }
 
     async function loadTopics() {
-      console.log("🔄 Loading topics...");
       try {
         const res = await fetch(`${apiBase}/topics`);
-        console.log("📥 Topics response object:", res);
-
         const data = await res.json();
-        console.log("✅ Topics response JSON:", data);
-
         const list = document.getElementById("topicsList");
         const select = document.getElementById("sendTopic");
         list.innerHTML = "";
         select.innerHTML = `<option value="" disabled selected>Select Topic</option>`;
 
-        if (data.topics && data.topics.length > 0) {
-          console.log("📂 Topics found:", data.topics);
-          data.topics.forEach((t) => {
+        if (data.topics) {
+          data.topics.forEach(t => {
             const li = document.createElement("li");
             li.className = "list-group-item d-flex justify-content-between align-items-start";
-            li.innerHTML = `
-              <div><strong>${t.topic}</strong><br><small class="text-muted">${t.description}</small></div>
-              <button class="btn btn-sm btn-outline-danger" onclick="deleteTopic('${t.topic}')">Delete</button>
-            `;
+            li.innerHTML = `<div><strong>${t.topic}</strong><br><small class="text-muted">${t.description}</small></div>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteTopic('${t.topic}')">Delete</button>`;
             list.appendChild(li);
 
             const opt = document.createElement("option");
@@ -204,37 +195,22 @@
             opt.textContent = t.topic;
             select.appendChild(opt);
           });
-
-          // Load all notifications by default
-          loadNotifications();
-        } else {
-          console.warn("⚠️ No topics found in API response.");
-          document.getElementById("notificationsList").innerHTML = "";
-          document.getElementById("noNotifications").classList.remove("d-none");
+          loadNotifications(); // Load all notifications by default
         }
       } catch (err) {
-        console.error("❌ Error loading topics:", err);
+        console.error(err);
       }
     }
 
     async function deleteTopic(topic) {
-      console.log("🗑️ Deleting topic:", topic);
-      if (!confirm(`Delete topic: ${topic}?`)) {
-        console.log("❌ Delete cancelled");
-        return;
-      }
-
+      if (!confirm(`Delete topic: ${topic}?`)) return;
       try {
         const res = await fetch(`${apiBase}/delete-topic/${topic}`, { method: "DELETE" });
-        console.log("📥 Delete response object:", res);
-
         const data = await res.json();
-        console.log("✅ Delete response JSON:", data);
-
         alert(data.message);
         loadTopics();
       } catch (err) {
-        console.error("❌ Error deleting topic:", err);
+        console.error(err);
       }
     }
 
@@ -243,17 +219,14 @@
       const topic = document.getElementById("sendTopic").value;
       const title = document.getElementById("title").value;
       const body = document.getElementById("body").value;
-      console.log("SendNotification called with:", { topic, title, body });
 
       if (!topic || !title || !body) {
-        console.warn("⚠️ Missing fields in sendNotification");
         alert("⚠️ Please fill all fields.");
         return;
       }
 
       const btn = document.getElementById("sendBtn");
       btn.disabled = true; btn.textContent = "Sending...";
-      console.log("🔄 Sending notification...");
 
       try {
         const res = await fetch(`${apiBase}/send-to-topic`, {
@@ -261,84 +234,64 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ topic, title, body })
         });
-        console.log("📥 Notification response object:", res);
-
         const data = await res.json();
-        console.log("✅ Notification response JSON:", data);
-
         alert(data.message);
         document.getElementById("title").value = "";
         document.getElementById("body").value = "";
-        loadNotifications(); // reload all notifications
+        loadNotifications();
       } catch (err) {
-        console.error("❌ Failed to send notification:", err);
+        console.error(err);
         alert("❌ Failed to send notification.");
       }
+
       btn.disabled = false; btn.textContent = "Send";
     }
 
-    async function loadNotifications(topic) {
-      console.log("🔄 Loading notifications for topic:", topic || "all topics");
-
+    async function loadNotifications() {
       try {
         const res = await fetch(`${apiBase}/notifications`);
-        console.log("📥 Notifications response object:", res);
-
         const data = await res.json();
-        console.log("✅ Notifications response JSON:", data);
-
         const list = document.getElementById("notificationsList");
         list.innerHTML = "";
 
-        if (data.success && data.notifications && data.notifications.length > 0) {
-          // Show all if no topic is selected
-          const filtered = topic ? data.notifications.filter(n => n.topic === topic) : data.notifications;
-          console.log("📑 Notifications to display:", filtered);
+        if (data.success && data.notifications) {
+          const selectedTopic = document.getElementById("sendTopic").value;
+          const filtered = selectedTopic ? data.notifications.filter(n => n.topic === selectedTopic) : data.notifications;
 
           if (filtered.length > 0) {
             document.getElementById("noNotifications").classList.add("d-none");
-
             filtered.forEach(n => {
               const li = document.createElement("li");
               li.className = "list-group-item";
-              li.innerHTML = `
-                <div>
-                  <strong>${n.title}</strong><br>${n.body}
-                  <div class="mt-1">
-                    <small>📌 Topic: ${n.topic}</small><br>
-                    <small>🕒 ${new Date(n.sent_at).toLocaleString()}</small>
-                  </div>
-                </div>
-              `;
+              li.innerHTML = `<div><strong>${n.title}</strong><br>${n.body}
+                              <div class="mt-1"><small>📌 Topic: ${n.topic}</small><br>
+                              <small>🕒 ${new Date(n.sent_at).toLocaleString()}</small></div></div>`;
               list.appendChild(li);
             });
           } else {
-            console.warn("⚠️ No notifications found for this topic.");
             document.getElementById("noNotifications").classList.remove("d-none");
           }
         } else {
-          console.warn("⚠️ Notifications API returned empty/invalid response.");
           document.getElementById("noNotifications").classList.remove("d-none");
         }
       } catch (err) {
-        console.error("❌ Error loading notifications:", err);
+        console.error(err);
         document.getElementById("noNotifications").classList.remove("d-none");
       }
     }
 
-    // ---------- EXTRA LISTENERS ----------
-    document.getElementById("notify-tab").addEventListener("click", () => {
-      console.log("📢 Notifications tab clicked");
-      const selectedTopic = document.getElementById("sendTopic").value;
-      loadNotifications(selectedTopic);
-    });
+    document.getElementById("notify-tab").addEventListener("click", () => loadNotifications());
+    document.getElementById("sendTopic").addEventListener("change", () => loadNotifications());
 
-    document.getElementById("sendTopic").addEventListener("change", (e) => {
-      console.log("🔄 Topic changed in notification dropdown:", e.target.value);
-      loadNotifications(e.target.value);
+    // ---------- AUTO LOGIN ----------
+    window.addEventListener("DOMContentLoaded", () => {
+      if (localStorage.getItem("adminLoggedIn") === "true") {
+        document.getElementById("loginCard").classList.add("d-none");
+        document.getElementById("adminPanel").classList.remove("d-none");
+        loadTopics();
+      }
     });
   </script>
 
 </body>
-
 </html>
