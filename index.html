@@ -93,7 +93,7 @@
       ].map(s => s.toLowerCase().replace(/\s/g, "_"));
       console.log("📌 Topics to subscribe:", topics);
 
-      const res = await fetch("https://375867a042fb.ngrok-free.app/subscribe", {
+      const res = await fetch("https://14a69dfae8ff.ngrok-free.app/subscribe", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ token, topics, ...student })
@@ -115,7 +115,7 @@
 
     try {
       console.log("🔑 Sending login request:", { studentNo, password });
-      const res = await fetch("https://375867a042fb.ngrok-free.app/loginStudent", {
+      const res = await fetch("https://14a69dfae8ff.ngrok-free.app/loginStudent", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ studentNo, password })
