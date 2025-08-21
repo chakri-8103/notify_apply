@@ -38,11 +38,12 @@ button.btn { border-radius: 50px; font-weight: 500; }
   flex: 1 1 calc(50% - 15px);
   border-radius: 12px;
   padding: 15px;
-  background: #ffffff;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  background: #f8f9fa;
+  border-left: 4px solid #0d6efd;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.notif-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.15); }
+.notif-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
 .row-details { display: flex; gap: 30px; flex-wrap: wrap; }
 .col-left, .col-right { flex: 1; min-width: 300px; }
 ul.list-group li {
@@ -51,20 +52,32 @@ ul.list-group li {
   padding: 10px 15px;
   transition: background 0.2s ease;
 }
-ul.list-group li:hover { background: #f1f8e9; }
+ul.list-group li:hover { background: #e8f5e9; }
 .icon-tabs {
   display: flex;
   justify-content: flex-end;
   gap: 15px;
   margin-bottom: 15px;
+  position: relative;
 }
 .icon-tabs i {
   font-size: 24px;
   cursor: pointer;
   color: #00796b;
   transition: color 0.2s;
+  position: relative;
 }
 .icon-tabs i.active { color: #004d40; }
+.red-dot {
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  width: 10px;
+  height: 10px;
+  background: red;
+  border-radius: 50%;
+  border: 1px solid white;
+}
 #loginCard { margin-bottom: 30px; }
 </style>
 </head>
@@ -93,7 +106,9 @@ ul.list-group li:hover { background: #f1f8e9; }
         <div class="card-body">
           <div class="icon-tabs">
             <i class="fa-solid fa-user active" id="studentIcon"></i>
-            <i class="fa-solid fa-bell" id="notifIcon"></i>
+            <i class="fa-solid fa-bell" id="notifIcon">
+              <span id="notifDot" class="red-dot" style="display:none;"></span>
+            </i>
           </div>
           <div class="row-details">
             <div class="col-left" id="studentInfo">
@@ -129,8 +144,11 @@ const db = firebase.firestore();
 
 const studentIcon = document.getElementById("studentIcon");
 const notifIcon = document.getElementById("notifIcon");
+const notifDot = document.getElementById("notifDot");
 const studentInfo = document.getElementById("studentInfo");
 const notifContainer = document.getElementById("notifContainer");
+
+let hasNewNotifications = false;
 
 studentIcon.addEventListener("click", () => {
   console.log("Student tab clicked");
@@ -146,6 +164,10 @@ notifIcon.addEventListener("click", () => {
   notifContainer.style.display = "flex";
   notifIcon.classList.add("active");
   studentIcon.classList.remove("active");
+  if(hasNewNotifications) {
+    notifDot.style.display = "none";
+    hasNewNotifications = false;
+  }
 });
 
 async function subscribeUser(student) {
@@ -208,13 +230,18 @@ async function fetchNotifications(topics) {
     const filtered = data.notifications.filter(n => topics.includes(n.topic));
     console.log("Filtered notifications:", filtered);
 
+    if(filtered.length > 0) {
+      notifDot.style.display = "block";
+      hasNewNotifications = true;
+    }
+
     const container = document.getElementById("notificationsContainer");
     container.innerHTML = "";
 
     filtered.forEach(n => {
       const card = document.createElement("div");
-      card.classList.add("notif-card", "shadow-sm");
-      card.innerHTML = `<h6><b>${n.title}</b></h6>
+      card.classList.add("notif-card", "shadow-sm", "p-3", "mb-2", "bg-light");
+      card.innerHTML = `<h6 class="fw-bold text-primary">${n.title}</h6>
                         <p>${n.body}</p>
                         <small class="text-muted">Topic: ${n.topic}</small>`;
       container.appendChild(card);
