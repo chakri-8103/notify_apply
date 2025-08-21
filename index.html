@@ -8,16 +8,17 @@
   <style>
     body { background: #f8f9fa; }
     .card { margin-top: 40px; }
-    #notificationsContainer { margin-top: 15px; }
-    .notif-card { margin-bottom: 10px; flex: 1 1 calc(50% - 10px); }
+    #notificationsContainer { margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px; }
+    .notif-card { flex: 1 1 calc(50% - 10px); }
     .notif-icon { cursor: pointer; position: absolute; top: 10px; right: 15px; font-size: 20px; }
-    #notificationsContainer { display: flex; flex-wrap: wrap; gap: 10px; }
+    .row-details { display: flex; gap: 20px; flex-wrap: wrap; }
+    .col-left, .col-right { flex: 1; min-width: 300px; }
   </style>
 </head>
 <body>
 <div class="container">
   <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
       <!-- Login Card -->
       <div class="card shadow" id="loginCard">
         <div class="card-body">
@@ -32,18 +33,26 @@
         </div>
       </div>
 
-      <!-- Student Info Card -->
-      <div class="card shadow d-none position-relative" id="studentCard">
+      <!-- Student Info + Notifications -->
+      <div class="card shadow d-none" id="studentCard">
         <div class="card-body">
-          <h4 class="card-title">Student Details</h4>
-          <span class="notif-icon" id="notifBtn">🔔</span>
-          <ul class="list-group" id="studentDetails"></ul>
-          <button class="btn btn-success mt-3 w-100">Subscribed ✅</button>
+          <h4 class="card-title mb-3">Student Panel</h4>
+          <div class="row-details">
+            <!-- Left: Student Details -->
+            <div class="col-left">
+              <ul class="list-group" id="studentDetails"></ul>
+              <button class="btn btn-secondary mt-3 w-100" id="subscribedBtn" disabled>Subscribed ⏳</button>
+            </div>
 
-          <!-- Notifications Container -->
-          <div id="notificationsContainer" class="d-none"></div>
+            <!-- Right: Notifications -->
+            <div class="col-right">
+              <h5>Notifications</h5>
+              <div id="notificationsContainer"></div>
+            </div>
+          </div>
         </div>
       </div>
+
     </div>
   </div>
 </div>
@@ -68,37 +77,54 @@
 
   async function subscribeUser(student) {
     try {
+      console.log("Requesting Notification Permission...");
       const permission = await Notification.requestPermission();
       if (permission !== "granted") throw new Error("Notification permission denied");
 
+      console.log("Registering service worker...");
       const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
 
+      console.log("Fetching FCM token...");
       const token = await messaging.getToken({
         vapidKey: 'BEBSBvKWLGx6At08ltRQ9Q-r2dNG7xUHIXQLOZMT-8va2QlL02yTBxmahf58Dgu3x0_uIbinrS2PS7Zes8yzZS4',
         serviceWorkerRegistration: registration
       });
       if (!token) throw new Error("Failed to get FCM token");
+      console.log("FCM Token:", token);
 
+      console.log("Saving student data to Firestore...");
       await db.collection("students").doc(student.student_no).set({
         ...student,
         fcm_token: token,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
+      console.log("Student data saved.");
 
       const topics = [
         student.campus_name,
         student.course_name,
         student.section_name
       ].map(s => s.toLowerCase().replace(/\s/g, "_"));
+      console.log("Topics to subscribe:", topics);
 
-      await fetch("https://a9025453e8af.ngrok-free.app/subscribe", {
+      console.log("Subscribing to topics via API...");
+      const res = await fetch("https://a9025453e8af.ngrok-free.app/subscribe", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ token, topics, ...student })
       });
+      console.log("Subscription API response:", await res.text());
 
-      // Fetch notifications after subscription
-      fetchNotifications(topics);
+      console.log("Fetching notifications...");
+      await fetchNotifications(topics);
+
+      // Only after full subscription + notifications, enable button
+      const subBtn = document.getElementById("subscribedBtn");
+      subBtn.innerText = "Subscribed ✅";
+      subBtn.classList.remove("btn-secondary");
+      subBtn.classList.add("btn-success");
+      subBtn.disabled = false;
+      console.log("✅ Student fully subscribed.");
 
     } catch (err) {
       console.error("Subscription Failed:", err.message);
@@ -127,6 +153,9 @@
         `;
         container.appendChild(card);
       });
+
+      console.log("Notifications displayed:", filtered);
+
     } catch (err) {
       console.error("Error fetching notifications:", err.message);
     }
@@ -138,6 +167,7 @@
     if (!studentNo || !password) return alert("Enter Student No & Password");
 
     try {
+      console.log("Logging in student:", studentNo);
       const res = await fetch("https://a9025453e8af.ngrok-free.app/loginStudent", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
@@ -165,21 +195,15 @@
         <li class="list-group-item"><b>Roll No:</b> ${student.roll_no}</li>
       `;
 
-      subscribeUser(student);
+      await subscribeUser(student);
 
     } catch (err) {
       alert("Login Error: " + err.message);
     }
   });
 
-  // Notification toggle
-  document.getElementById("notifBtn").addEventListener("click", () => {
-    const container = document.getElementById("notificationsContainer");
-    container.classList.toggle("d-none");
-  });
-
   // Auto-login if session exists
-  window.addEventListener("load", () => {
+  window.addEventListener("load", async () => {
     const student = JSON.parse(sessionStorage.getItem("student") || null);
     if (student) {
       document.getElementById("loginCard").classList.add("d-none");
@@ -203,7 +227,14 @@
         student.course_name,
         student.section_name
       ].map(s => s.toLowerCase().replace(/\s/g, "_"));
-      fetchNotifications(topics);
+
+      await fetchNotifications(topics);
+
+      const subBtn = document.getElementById("subscribedBtn");
+      subBtn.innerText = "Subscribed ✅";
+      subBtn.classList.remove("btn-secondary");
+      subBtn.classList.add("btn-success");
+      subBtn.disabled = false;
     }
   });
 </script>
