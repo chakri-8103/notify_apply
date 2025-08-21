@@ -115,7 +115,7 @@
 
     try {
       console.log("🔑 Sending login request:", { studentNo, password });
-      const res = await fetch("http://10.60.1.9:3006/api/student/loginStudent", {
+      const res = await fetch("https://apis.aditya.ac.in/analysis/student/loginStudent", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ studentNo, password })
