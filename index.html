@@ -23,36 +23,36 @@ body {
   box-shadow: 0 12px 25px rgba(0,0,0,0.2);
 }
 .card-title { color: #00796b; font-weight: 600; }
-input.form-control {
-  border-radius: 50px;
-  padding: 10px 20px;
-}
+input.form-control { border-radius: 50px; padding: 10px 20px; }
 button.btn { border-radius: 50px; font-weight: 500; }
+
 #notificationsContainer {
   margin-top: 15px;
   gap: 15px;
   flex-wrap: wrap;
-  display: flex;
+  display: none;
 }
 .notif-card {
   flex: 1 1 calc(50% - 15px);
   border-radius: 12px;
   padding: 15px;
-  background: #f8f9fa;
-  border-left: 4px solid #0d6efd;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  background: #ffffff;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
-.notif-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+.notif-card:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.15); }
+
 .row-details { display: flex; gap: 30px; flex-wrap: wrap; }
 .col-left, .col-right { flex: 1; min-width: 300px; }
+
 ul.list-group li {
   border-radius: 10px;
   margin-bottom: 8px;
   padding: 10px 15px;
   transition: background 0.2s ease;
 }
-ul.list-group li:hover { background: #e8f5e9; }
+ul.list-group li:hover { background: #f1f8e9; }
+
 .icon-tabs {
   display: flex;
   justify-content: flex-end;
@@ -65,19 +65,20 @@ ul.list-group li:hover { background: #e8f5e9; }
   cursor: pointer;
   color: #00796b;
   transition: color 0.2s;
-  position: relative;
 }
 .icon-tabs i.active { color: #004d40; }
-.red-dot {
+
+#notifDot {
   position: absolute;
-  top: 0px;
-  right: 0px;
+  top: -5px;
+  right: -5px;
   width: 10px;
   height: 10px;
-  background: red;
   border-radius: 50%;
-  border: 1px solid white;
+  background: red;
+  display: none;
 }
+
 #loginCard { margin-bottom: 30px; }
 </style>
 </head>
@@ -106,16 +107,15 @@ ul.list-group li:hover { background: #e8f5e9; }
         <div class="card-body">
           <div class="icon-tabs">
             <i class="fa-solid fa-user active" id="studentIcon"></i>
-            <i class="fa-solid fa-bell" id="notifIcon">
-              <span id="notifDot" class="red-dot" style="display:none;"></span>
-            </i>
+            <i class="fa-solid fa-bell" id="notifIcon"></i>
+            <span id="notifDot"></span>
           </div>
           <div class="row-details">
             <div class="col-left" id="studentInfo">
               <ul class="list-group" id="studentDetails"></ul>
               <button class="btn btn-secondary mt-3 w-100" id="subscribedBtn" disabled>Subscribed ⏳</button>
             </div>
-            <div class="col-right" id="notifContainer" style="display: none;">
+            <div class="col-right" id="notifContainer">
               <div id="notificationsContainer"></div>
             </div>
           </div>
@@ -148,10 +148,7 @@ const notifDot = document.getElementById("notifDot");
 const studentInfo = document.getElementById("studentInfo");
 const notifContainer = document.getElementById("notifContainer");
 
-let hasNewNotifications = false;
-
 studentIcon.addEventListener("click", () => {
-  console.log("Student tab clicked");
   studentInfo.style.display = "block";
   notifContainer.style.display = "none";
   studentIcon.classList.add("active");
@@ -159,52 +156,47 @@ studentIcon.addEventListener("click", () => {
 });
 
 notifIcon.addEventListener("click", () => {
-  console.log("Notification tab clicked");
   studentInfo.style.display = "none";
   notifContainer.style.display = "flex";
   notifIcon.classList.add("active");
   studentIcon.classList.remove("active");
-  if(hasNewNotifications) {
-    notifDot.style.display = "none";
-    hasNewNotifications = false;
-  }
+  notifDot.style.display = "none";
+
+  // Save last seen notifications
+  const allCards = Array.from(document.querySelectorAll(".notif-card"));
+  const ids = allCards.map(c => c.dataset.id);
+  localStorage.setItem("lastSeenNotifications", JSON.stringify(ids));
 });
+
+let lastSeenNotifications = JSON.parse(localStorage.getItem("lastSeenNotifications") || "[]");
 
 async function subscribeUser(student) {
   try {
-    console.log("Requesting notification permission...");
     const permission = await Notification.requestPermission();
     if (permission !== "granted") throw new Error("Notification permission denied");
 
-    console.log("Registering service worker...");
     const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
-
-    console.log("Getting FCM token...");
     const token = await messaging.getToken({
       vapidKey: 'BEBSBvKWLGx6At08ltRQ9Q-r2dNG7xUHIXQLOZMT-8va2QlL02yTBxmahf58Dgu3x0_uIbinrS2PS7Zes8yzZS4',
       serviceWorkerRegistration: registration
     });
-    console.log("FCM token:", token);
     if (!token) throw new Error("Failed to get FCM token");
 
-    console.log("Saving student to Firestore...");
     await db.collection("students").doc(student.student_no).set({
       ...student,
       fcm_token: token,
       timestamp: firebase.firestore.FieldValue.serverTimestamp()
     });
 
-    const topics = [student.campus_name, student.course_name, student.section_name].map(s => s.toLowerCase().replace(/\s/g, "_"));
-    console.log("Subscribing to topics:", topics);
+    const topics = [student.campus_name, student.course_name, student.section_name]
+                    .map(s => s.toLowerCase().replace(/\s/g, "_"));
 
-    const res = await fetch("https://a9025453e8af.ngrok-free.app/subscribe", {
+    await fetch("https://a9025453e8af.ngrok-free.app/subscribe", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ token, topics, ...student })
     });
-    console.log("Subscribe API response:", await res.text());
 
-    console.log("Fetching notifications...");
     await fetchNotifications(topics);
 
     const subBtn = document.getElementById("subscribedBtn");
@@ -213,40 +205,36 @@ async function subscribeUser(student) {
     subBtn.classList.add("btn-success");
     subBtn.disabled = false;
 
-  } catch(err) {
-    console.error("Subscription failed:", err.message);
+  } catch (err) {
+    console.error("Subscription Failed:", err.message);
   }
 }
 
 async function fetchNotifications(topics) {
   try {
-    console.log("Fetching notifications from API...");
     const res = await fetch("https://59405185-0de8-49bf-9e02-a228b0702df3-00-21difm4dvtrej.spock.replit.dev/notifications");
     const data = await res.json();
-    console.log("Notifications received:", data);
-
     if (!data.success) return;
 
     const filtered = data.notifications.filter(n => topics.includes(n.topic));
-    console.log("Filtered notifications:", filtered);
-
-    if(filtered.length > 0) {
-      notifDot.style.display = "block";
-      hasNewNotifications = true;
-    }
-
     const container = document.getElementById("notificationsContainer");
     container.innerHTML = "";
 
+    let hasNew = false;
     filtered.forEach(n => {
       const card = document.createElement("div");
       card.classList.add("notif-card", "shadow-sm", "p-3", "mb-2", "bg-light");
+      card.dataset.id = n.id;
       card.innerHTML = `<h6 class="fw-bold text-primary">${n.title}</h6>
                         <p>${n.body}</p>
                         <small class="text-muted">Topic: ${n.topic}</small>`;
       container.appendChild(card);
-      console.log("Notification added to DOM:", n.title);
+
+      if (!lastSeenNotifications.includes(n.id)) hasNew = true;
     });
+
+    if (hasNew) notifDot.style.display = "block";
+    else notifDot.style.display = "none";
 
   } catch(err) {
     console.error("Error fetching notifications:", err.message);
@@ -259,15 +247,12 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
   if (!studentNo || !password) return alert("Enter Student No & Password");
 
   try {
-    console.log("Logging in student:", studentNo);
     const res = await fetch("https://a9025453e8af.ngrok-free.app/loginStudent", {
       method: "POST",
       headers: {"Content-Type": "application/json"},
       body: JSON.stringify({ studentNo, password })
     });
     const data = await res.json();
-    console.log("Login response:", data);
-
     if (!data.status) return alert("Invalid credentials");
 
     const student = data.result[0];
@@ -290,15 +275,15 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
 
     await subscribeUser(student);
 
-  } catch(err) {
+  } catch (err) {
     alert("Login Error: " + err.message);
   }
 });
 
+// Auto-login if session exists
 window.addEventListener("load", async () => {
   const student = JSON.parse(sessionStorage.getItem("student") || null);
   if (student) {
-    console.log("Auto-login student:", student.student_name);
     document.getElementById("loginCard").classList.add("d-none");
     document.getElementById("studentCard").classList.remove("d-none");
 
@@ -314,7 +299,9 @@ window.addEventListener("load", async () => {
       <li class="list-group-item"><b>Roll No:</b> ${student.roll_no}</li>
     `;
 
-    const topics = [student.campus_name, student.course_name, student.section_name].map(s => s.toLowerCase().replace(/\s/g, "_"));
+    const topics = [student.campus_name, student.course_name, student.section_name]
+                    .map(s => s.toLowerCase().replace(/\s/g, "_"));
+
     await fetchNotifications(topics);
 
     const subBtn = document.getElementById("subscribedBtn");
