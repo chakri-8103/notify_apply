@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Admin Panel - Topics & Notifications</title>
@@ -9,10 +10,12 @@
     body {
       background: #f5f6fa;
     }
+
     .card {
       border-radius: 1rem;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
     }
+
     .nav-tabs .nav-link.active {
       font-weight: 600;
       background: #fff !important;
@@ -20,256 +23,325 @@
     }
   </style>
 </head>
-<body>
-<main class="container py-5">
 
-  <!-- Login Section -->
-  <div id="loginCard" class="row justify-content-center">
-    <div class="col-md-5">
-      <div class="card p-4">
-        <div class="card-body">
-          <h4 class="text-center mb-3">🔐 Admin Login</h4>
-          <div class="mb-3">
-            <label class="form-label">Username</label>
-            <input type="text" id="username" class="form-control" placeholder="Enter username">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Password</label>
-            <input type="password" id="password" class="form-control" placeholder="Enter password">
-          </div>
-          <div class="d-grid">
-            <button class="btn btn-primary" onclick="login()">Login</button>
+<body>
+  <main class="container py-5">
+
+    <!-- Login Section -->
+    <div id="loginCard" class="row justify-content-center">
+      <div class="col-md-5">
+        <div class="card p-4">
+          <div class="card-body">
+            <h4 class="text-center mb-3">🔐 Admin Login</h4>
+            <div class="mb-3">
+              <label class="form-label">Username</label>
+              <input type="text" id="username" class="form-control" placeholder="Enter username">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" id="password" class="form-control" placeholder="Enter password">
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-primary" onclick="login()">Login</button>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- Admin Panel Section -->
-  <div id="adminPanel" class="d-none">
-    <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
-      <li class="nav-item">
-        <button class="nav-link active" id="topics-tab" data-bs-toggle="tab" data-bs-target="#topics" type="button">📂 Topics</button>
-      </li>
-      <li class="nav-item">
-        <button class="nav-link" id="notify-tab" data-bs-toggle="tab" data-bs-target="#notify" type="button">📢 Notifications</button>
-      </li>
-    </ul>
+    <!-- Admin Panel Section -->
+    <div id="adminPanel" class="d-none">
+      <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+        <li class="nav-item">
+          <button class="nav-link active" id="topics-tab" data-bs-toggle="tab" data-bs-target="#topics" type="button">📂
+            Topics</button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" id="notify-tab" data-bs-toggle="tab" data-bs-target="#notify" type="button">📢
+            Notifications</button>
+        </li>
+      </ul>
 
-    <div class="tab-content" id="mainTabsContent">
+      <div class="tab-content" id="mainTabsContent">
 
-      <!-- Topics Tab -->
-      <div class="tab-pane fade show active" id="topics" role="tabpanel">
-        <div class="row">
-          <div class="col-md-5">
-            <div class="card mb-4">
-              <div class="card-header">➕ Create Topic</div>
-              <div class="card-body">
-                <input type="text" id="topicName" class="form-control mb-3" placeholder="Topic Name">
-                <textarea id="description" class="form-control mb-3" rows="3" placeholder="Description"></textarea>
-                <button class="btn btn-primary w-100" onclick="createTopic()">Create</button>
+        <!-- Topics Tab -->
+        <div class="tab-pane fade show active" id="topics" role="tabpanel">
+          <div class="row">
+            <div class="col-md-5">
+              <div class="card mb-4">
+                <div class="card-header">➕ Create Topic</div>
+                <div class="card-body">
+                  <input type="text" id="topicName" class="form-control mb-3" placeholder="Topic Name">
+                  <textarea id="description" class="form-control mb-3" rows="3" placeholder="Description"></textarea>
+                  <button class="btn btn-primary w-100" onclick="createTopic()">Create</button>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="col-md-7">
-            <div class="card">
-              <div class="card-header">📋 Topics List</div>
-              <div class="card-body">
-                <ul id="topicsList" class="list-group"></ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Notifications Tab -->
-      <div class="tab-pane fade" id="notify" role="tabpanel">
-        <div class="row">
-          <div class="col-md-5">
-            <div class="card mb-4">
-              <div class="card-header">✉️ Send Notification</div>
-              <div class="card-body">
-                <select id="sendTopic" class="form-select mb-3"></select>
-                <input type="text" id="title" class="form-control mb-3" placeholder="Title">
-                <textarea id="body" class="form-control mb-3" rows="3" placeholder="Message Body"></textarea>
-                <button id="sendBtn" class="btn btn-success w-100" onclick="sendNotification()">Send</button>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-7">
-            <div class="card">
-              <div class="card-header">📑 Notification List</div>
-              <div class="card-body">
-                <ul id="notificationsList" class="list-group"></ul>
-                <div id="noNotifications" class="text-muted mt-3 text-center d-none">
-                  No notifications found.
+            <div class="col-md-7">
+              <div class="card">
+                <div class="card-header">📋 Topics List</div>
+                <div class="card-body">
+                  <ul id="topicsList" class="list-group"></ul>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-    </div>
-  </div>
-</main>
-
-<script>
-  const apiBase = "https://59405185-0de8-49bf-9e02-a228b0702df3-00-21difm4dvtrej.spock.replit.dev";
-
-  // ---------- LOGIN ----------
-  function login() {
-    const user = document.getElementById("username").value.trim();
-    const pass = document.getElementById("password").value.trim();
-    if (user === "admin" && pass === "1234") {
-      document.getElementById("loginCard").classList.add("d-none");
-      document.getElementById("adminPanel").classList.remove("d-none");
-      loadTopics();
-    } else {
-      alert("❌ Invalid credentials!");
-    }
-  }
-
-  // ---------- TOPICS ----------
-  async function createTopic() {
-    const topic = document.getElementById("topicName").value;
-    const description = document.getElementById("description").value;
-    if (!topic || !description) {
-      alert("⚠️ Please fill all fields.");
-      return;
-    }
-    const res = await fetch(`${apiBase}/create-topic`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topic, description })
-    });
-    const data = await res.json();
-    alert(data.message);
-    loadTopics();
-    document.getElementById("topicName").value = "";
-    document.getElementById("description").value = "";
-  }
-
-  async function loadTopics() {
-    const res = await fetch(`${apiBase}/topics`);
-    const data = await res.json();
-    const list = document.getElementById("topicsList");
-    const select = document.getElementById("sendTopic");
-    list.innerHTML = "";
-    select.innerHTML = `<option value="" disabled selected>Select Topic</option>`;
-    if (data.topics) {
-      data.topics.forEach(t => {
-        const li = document.createElement("li");
-        li.className = "list-group-item d-flex justify-content-between align-items-start";
-        li.innerHTML = `
-          <div><strong>${t.topic}</strong><br><small class="text-muted">${t.description}</small></div>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteTopic('${t.topic}')">Delete</button>
-        `;
-        list.appendChild(li);
-
-        const opt = document.createElement("option");
-        opt.value = t.topic;
-        opt.textContent = t.topic;
-        select.appendChild(opt);
-      });
-    }
-  }
-
-  async function deleteTopic(topic) {
-    if (!confirm(`Delete topic: ${topic}?`)) return;
-    const res = await fetch(`${apiBase}/delete-topic/${topic}`, { method: "DELETE" });
-    const data = await res.json();
-    alert(data.message);
-    loadTopics();
-  }
-
-  // ---------- NOTIFICATIONS ----------
-  async function sendNotification() {
-    const topic = document.getElementById("sendTopic").value;
-    const title = document.getElementById("title").value;
-    const body = document.getElementById("body").value;
-    if (!topic || !title || !body) {
-      alert("⚠️ Please fill all fields.");
-      return;
-    }
-    const btn = document.getElementById("sendBtn");
-    btn.disabled = true; btn.textContent = "Sending...";
-    try {
-      const res = await fetch(`${apiBase}/send-to-topic`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ topic, title, body })
-      });
-      const data = await res.json();
-      alert(data.message);
-      document.getElementById("title").value = "";
-      document.getElementById("body").value = "";
-      loadNotifications(topic);
-    } catch {
-      alert("❌ Failed to send notification.");
-    }
-    btn.disabled = false; btn.textContent = "Send";
-  }
-
-  async function loadNotifications(topic) {
-    if (!topic) return;
-    try {
-      const res = await fetch(`${apiBase}/notifications`);
-      const data = await res.json();
-      console.log("API Data:", data);
-
-      const list = document.getElementById("notificationsList");
-      list.innerHTML = "";
-
-      if (data.success && data.notifications && data.notifications.length > 0) {
-        const filtered = data.notifications.filter(n => n.topic === topic);
-
-        if (filtered.length > 0) {
-          document.getElementById("noNotifications").classList.add("d-none");
-
-          filtered.forEach(n => {
-            const li = document.createElement("li");
-            li.className = "list-group-item";
-            li.innerHTML = `
-              <div class="d-flex align-items-start">
-                <img src="${n.logoUrl}" alt="logo" width="40" height="40" class="me-2 rounded">
-                <div>
-                  <strong>${n.title}</strong><br>${n.body}
-                  ${n.image ? `<div><img src="${n.image}" alt="img" class="img-fluid mt-1 rounded"></div>` : ""}
-                  <div class="mt-1">
-                    <small>📌 Topic: ${n.topic}</small><br>
-                    <small>🕒 ${new Date(n.sent_at).toLocaleString()}</small>
+        <!-- Notifications Tab -->
+        <div class="tab-pane fade" id="notify" role="tabpanel">
+          <div class="row">
+            <div class="col-md-5">
+              <div class="card mb-4">
+                <div class="card-header">✉️ Send Notification</div>
+                <div class="card-body">
+                  <select id="sendTopic" class="form-select mb-3"></select>
+                  <input type="text" id="title" class="form-control mb-3" placeholder="Title">
+                  <textarea id="body" class="form-control mb-3" rows="3" placeholder="Message Body"></textarea>
+                  <button id="sendBtn" class="btn btn-success w-100" onclick="sendNotification()">Send</button>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-7">
+              <div class="card">
+                <div class="card-header">📑 Notification List</div>
+                <div class="card-body">
+                  <ul id="notificationsList" class="list-group"></ul>
+                  <div id="noNotifications" class="text-muted mt-3 text-center d-none">
+                    No notifications found.
                   </div>
                 </div>
               </div>
-            `;
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const apiBase = "https://59405185-0de8-49bf-9e02-a228b0702df3-00-21difm4dvtrej.spock.replit.dev";
+
+    // ---------- LOGIN ----------
+    function login() {
+      const user = document.getElementById("username").value.trim();
+      const pass = document.getElementById("password").value.trim();
+      console.log("Login attempt:", { user, pass });
+
+      if (user === "admin" && pass === "1234") {
+        console.log("✅ Login success");
+        document.getElementById("loginCard").classList.add("d-none");
+        document.getElementById("adminPanel").classList.remove("d-none");
+        loadTopics();
+      } else {
+        console.warn("❌ Invalid credentials!");
+        alert("❌ Invalid credentials!");
+      }
+    }
+
+    // ---------- TOPICS ----------
+    async function createTopic() {
+      const topic = document.getElementById("topicName").value;
+      const description = document.getElementById("description").value;
+      console.log("CreateTopic called with:", { topic, description });
+
+      if (!topic || !description) {
+        console.warn("⚠️ Missing fields in createTopic");
+        alert("⚠️ Please fill all fields.");
+        return;
+      }
+
+      console.log("🔄 Sending request to create-topic...");
+      try {
+        const res = await fetch(`${apiBase}/create-topic`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, description })
+        });
+        console.log("📥 Response object:", res);
+
+        const data = await res.json();
+        console.log("✅ Response JSON:", data);
+
+        alert(data.message);
+        loadTopics();
+
+        document.getElementById("topicName").value = "";
+        document.getElementById("description").value = "";
+      } catch (err) {
+        console.error("❌ Error creating topic:", err);
+      }
+    }
+
+    async function loadTopics() {
+      console.log("🔄 Loading topics...");
+      try {
+        const res = await fetch(`${apiBase}/topics`);
+        console.log("📥 Topics response object:", res);
+
+        const data = await res.json();
+        console.log("✅ Topics response JSON:", data);
+
+        const list = document.getElementById("topicsList");
+        const select = document.getElementById("sendTopic");
+        list.innerHTML = "";
+        select.innerHTML = `<option value="" disabled selected>Select Topic</option>`;
+
+        if (data.topics) {
+          console.log("📂 Topics found:", data.topics);
+          data.topics.forEach(t => {
+            const li = document.createElement("li");
+            li.className = "list-group-item d-flex justify-content-between align-items-start";
+            li.innerHTML = `
+            <div><strong>${t.topic}</strong><br><small class="text-muted">${t.description}</small></div>
+            <button class="btn btn-sm btn-outline-danger" onclick="deleteTopic('${t.topic}')">Delete</button>
+          `;
             list.appendChild(li);
+
+            const opt = document.createElement("option");
+            opt.value = t.topic;
+            opt.textContent = t.topic;
+            select.appendChild(opt);
           });
         } else {
+          console.warn("⚠️ No topics found in API response.");
+        }
+      } catch (err) {
+        console.error("❌ Error loading topics:", err);
+      }
+    }
+
+    async function deleteTopic(topic) {
+      console.log("🗑️ Deleting topic:", topic);
+      if (!confirm(`Delete topic: ${topic}?`)) {
+        console.log("❌ Delete cancelled");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${apiBase}/delete-topic/${topic}`, { method: "DELETE" });
+        console.log("📥 Delete response object:", res);
+
+        const data = await res.json();
+        console.log("✅ Delete response JSON:", data);
+
+        alert(data.message);
+        loadTopics();
+      } catch (err) {
+        console.error("❌ Error deleting topic:", err);
+      }
+    }
+
+    // ---------- NOTIFICATIONS ----------
+    async function sendNotification() {
+      const topic = document.getElementById("sendTopic").value;
+      const title = document.getElementById("title").value;
+      const body = document.getElementById("body").value;
+      console.log("SendNotification called with:", { topic, title, body });
+
+      if (!topic || !title || !body) {
+        console.warn("⚠️ Missing fields in sendNotification");
+        alert("⚠️ Please fill all fields.");
+        return;
+      }
+
+      const btn = document.getElementById("sendBtn");
+      btn.disabled = true; btn.textContent = "Sending...";
+      console.log("🔄 Sending notification...");
+
+      try {
+        const res = await fetch(`${apiBase}/send-to-topic`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, title, body })
+        });
+        console.log("📥 Notification response object:", res);
+
+        const data = await res.json();
+        console.log("✅ Notification response JSON:", data);
+
+        alert(data.message);
+        document.getElementById("title").value = "";
+        document.getElementById("body").value = "";
+        loadNotifications(topic);
+      } catch (err) {
+        console.error("❌ Failed to send notification:", err);
+        alert("❌ Failed to send notification.");
+      }
+      btn.disabled = false; btn.textContent = "Send";
+    }
+
+    async function loadNotifications(topic) {
+      console.log("🔄 Loading notifications for topic:", topic);
+      if (!topic) {
+        console.warn("⚠️ No topic selected.");
+        return;
+      }
+
+      try {
+        const res = await fetch(`${apiBase}/notifications`);
+        console.log("📥 Notifications response object:", res);
+
+        const data = await res.json();
+        console.log("✅ Notifications response JSON:", data);
+
+        const list = document.getElementById("notificationsList");
+        list.innerHTML = "";
+
+        if (data.success && data.notifications && data.notifications.length > 0) {
+          const filtered = data.notifications.filter(n => n.topic === topic);
+          console.log(`📑 Notifications filtered for topic "${topic}":`, filtered);
+
+          if (filtered.length > 0) {
+            document.getElementById("noNotifications").classList.add("d-none");
+
+            filtered.forEach(n => {
+              console.log("📌 Rendering notification:", n);
+              const li = document.createElement("li");
+              li.className = "list-group-item";
+              li.innerHTML = `
+              <div>
+                <strong>${n.title}</strong><br>${n.body}
+                <div class="mt-1">
+                  <small>📌 Topic: ${n.topic}</small><br>
+                  <small>🕒 ${new Date(n.sent_at).toLocaleString()}</small>
+                </div>
+              </div>
+            `;
+              list.appendChild(li);
+            });
+          } else {
+            console.warn("⚠️ No notifications found for this topic.");
+            document.getElementById("noNotifications").classList.remove("d-none");
+          }
+        } else {
+          console.warn("⚠️ Notifications API returned empty/invalid response.");
           document.getElementById("noNotifications").classList.remove("d-none");
         }
-      } else {
+      } catch (err) {
+        console.error("❌ Error loading notifications:", err);
         document.getElementById("noNotifications").classList.remove("d-none");
       }
-    } catch (err) {
-      console.error("Error loading notifications:", err);
-      document.getElementById("noNotifications").classList.remove("d-none");
     }
-  }
 
-  // ---------- EXTRA LISTENERS ----------
-  // Load notifications when tab opened
-  document.getElementById("notify-tab").addEventListener("click", () => {
-    const selectedTopic = document.getElementById("sendTopic").value;
-    if (selectedTopic) {
-      loadNotifications(selectedTopic);
-    }
-  });
+    // ---------- EXTRA LISTENERS ----------
+    document.getElementById("notify-tab").addEventListener("click", () => {
+      console.log("📢 Notifications tab clicked");
+      const selectedTopic = document.getElementById("sendTopic").value;
+      if (selectedTopic) {
+        loadNotifications(selectedTopic);
+      } else {
+        console.warn("⚠️ No topic selected when opening notifications tab");
+      }
+    });
 
-  // Load notifications when topic changed
-  document.getElementById("sendTopic").addEventListener("change", (e) => {
-    loadNotifications(e.target.value);
-  });
-</script>
+    document.getElementById("sendTopic").addEventListener("change", (e) => {
+      console.log("🔄 Topic changed in notification dropdown:", e.target.value);
+      loadNotifications(e.target.value);
+    });
+  </script>
+
 </body>
+
 </html>
