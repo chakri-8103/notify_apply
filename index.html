@@ -8,6 +8,9 @@
   <style>
     body { background: #f8f9fa; }
     .card { margin-top: 40px; }
+    #notificationsContainer { margin-top: 15px; }
+    .notif-card { margin-bottom: 10px; }
+    .notif-icon { cursor: pointer; position: absolute; top: 10px; right: 15px; font-size: 20px; }
   </style>
 </head>
 <body>
@@ -29,11 +32,15 @@
       </div>
 
       <!-- Student Info Card -->
-      <div class="card shadow d-none" id="studentCard">
+      <div class="card shadow d-none position-relative" id="studentCard">
         <div class="card-body">
           <h4 class="card-title">Student Details</h4>
+          <span class="notif-icon" id="notifBtn">🔔</span>
           <ul class="list-group" id="studentDetails"></ul>
           <button class="btn btn-success mt-3 w-100">Subscribed ✅</button>
+
+          <!-- Notifications Container -->
+          <div id="notificationsContainer" class="d-none"></div>
         </div>
       </div>
     </div>
@@ -60,80 +67,88 @@
 
   async function subscribeUser(student) {
     try {
-      console.log("🔔 Requesting Notification Permission...");
       const permission = await Notification.requestPermission();
       if (permission !== "granted") throw new Error("Notification permission denied");
-      console.log("✅ Notification permission granted");
 
-      console.log("📥 Registering service worker...");
       const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
-      console.log("✅ Service Worker Registered:", registration);
 
-      console.log("📡 Fetching FCM token...");
       const token = await messaging.getToken({
         vapidKey: 'BEBSBvKWLGx6At08ltRQ9Q-r2dNG7xUHIXQLOZMT-8va2QlL02yTBxmahf58Dgu3x0_uIbinrS2PS7Zes8yzZS4',
         serviceWorkerRegistration: registration
       });
-
       if (!token) throw new Error("Failed to get FCM token");
-      console.log("✅ FCM Token:", token);
 
-      console.log("💾 Saving to Firestore...");
       await db.collection("students").doc(student.student_no).set({
         ...student,
         fcm_token: token,
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
       });
-      console.log("✅ Student data saved to Firestore");
 
       const topics = [
         student.campus_name,
         student.course_name,
         student.section_name
       ].map(s => s.toLowerCase().replace(/\s/g, "_"));
-      console.log("📌 Topics to subscribe:", topics);
 
-      const res = await fetch("https://a9025453e8af.ngrok-free.app/subscribe", {
+      await fetch("https://a9025453e8af.ngrok-free.app/subscribe", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ token, topics, ...student })
       });
 
-      console.log("✅ Subscribed API Response:", await res.text());
-      console.log("🎉 Successfully Subscribed to topics");
+      // Fetch notifications after subscription
+      fetchNotifications(topics);
 
     } catch (err) {
-      console.error("❌ Subscription Failed:", err.message);
+      console.error("Subscription Failed:", err.message);
+    }
+  }
+
+  async function fetchNotifications(topics) {
+    try {
+      const res = await fetch("https://59405185-0de8-49bf-9e02-a228b0702df3-00-21difm4dvtrej.spock.replit.dev/notifications");
+      const data = await res.json();
+      if (!data.success) return;
+
+      const filtered = data.notifications.filter(n => topics.includes(n.topic));
+      const container = document.getElementById("notificationsContainer");
+      container.innerHTML = ""; 
+      
+      filtered.forEach(n => {
+        const card = document.createElement("div");
+        card.classList.add("card", "notif-card", "shadow-sm");
+        card.innerHTML = `
+          <div class="card-body">
+            <h6 class="card-title">${n.title}</h6>
+            <p class="card-text">${n.body}</p>
+            ${n.image ? `<img src="${n.image}" style="max-width:100px;">` : ""}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    } catch (err) {
+      console.error("Error fetching notifications:", err.message);
     }
   }
 
   document.getElementById("loginBtn").addEventListener("click", async () => {
     const studentNo = document.getElementById("studentNo").value.trim();
     const password = document.getElementById("password").value.trim();
-
     if (!studentNo || !password) return alert("Enter Student No & Password");
 
     try {
-      console.log("🔑 Sending login request:", { studentNo, password });
       const res = await fetch("https://a9025453e8af.ngrok-free.app/loginStudent", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
         body: JSON.stringify({ studentNo, password })
       });
-
       const data = await res.json();
-      console.log("📥 Login API Response:", data);
-
-      if (!data.status) {
-        console.error("❌ Invalid login");
-        return alert("Invalid credentials");
-      }
+      if (!data.status) return alert("Invalid credentials");
 
       const student = data.result[0];
-      console.log("✅ Student Data Found:", student);
-
       document.getElementById("loginCard").classList.add("d-none");
-      document.getElementById("studentCard").classList.remove("d-none");
+      const studentCard = document.getElementById("studentCard");
+      studentCard.classList.remove("d-none");
 
       const details = document.getElementById("studentDetails");
       details.innerHTML = `
@@ -147,13 +162,17 @@
         <li class="list-group-item"><b>Roll No:</b> ${student.roll_no}</li>
       `;
 
-      console.log("🚀 Proceeding with FCM subscription...");
       subscribeUser(student);
 
     } catch (err) {
-      console.error("❌ Login Failed:", err.message);
-      alert("Error: " + err.message);
+      alert("Login Error: " + err.message);
     }
+  });
+
+  // Notification toggle
+  document.getElementById("notifBtn").addEventListener("click", () => {
+    const container = document.getElementById("notificationsContainer");
+    container.classList.toggle("d-none");
   });
 </script>
 </body>
