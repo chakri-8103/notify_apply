@@ -188,15 +188,15 @@
         list.innerHTML = "";
         select.innerHTML = `<option value="" disabled selected>Select Topic</option>`;
 
-        if (data.topics) {
+        if (data.topics && data.topics.length > 0) {
           console.log("📂 Topics found:", data.topics);
-          data.topics.forEach(t => {
+          data.topics.forEach((t) => {
             const li = document.createElement("li");
             li.className = "list-group-item d-flex justify-content-between align-items-start";
             li.innerHTML = `
-            <div><strong>${t.topic}</strong><br><small class="text-muted">${t.description}</small></div>
-            <button class="btn btn-sm btn-outline-danger" onclick="deleteTopic('${t.topic}')">Delete</button>
-          `;
+              <div><strong>${t.topic}</strong><br><small class="text-muted">${t.description}</small></div>
+              <button class="btn btn-sm btn-outline-danger" onclick="deleteTopic('${t.topic}')">Delete</button>
+            `;
             list.appendChild(li);
 
             const opt = document.createElement("option");
@@ -204,8 +204,13 @@
             opt.textContent = t.topic;
             select.appendChild(opt);
           });
+
+          // Load all notifications by default
+          loadNotifications();
         } else {
           console.warn("⚠️ No topics found in API response.");
+          document.getElementById("notificationsList").innerHTML = "";
+          document.getElementById("noNotifications").classList.remove("d-none");
         }
       } catch (err) {
         console.error("❌ Error loading topics:", err);
@@ -264,7 +269,7 @@
         alert(data.message);
         document.getElementById("title").value = "";
         document.getElementById("body").value = "";
-        loadNotifications(topic);
+        loadNotifications(); // reload all notifications
       } catch (err) {
         console.error("❌ Failed to send notification:", err);
         alert("❌ Failed to send notification.");
@@ -273,11 +278,7 @@
     }
 
     async function loadNotifications(topic) {
-      console.log("🔄 Loading notifications for topic:", topic);
-      if (!topic) {
-        console.warn("⚠️ No topic selected.");
-        return;
-      }
+      console.log("🔄 Loading notifications for topic:", topic || "all topics");
 
       try {
         const res = await fetch(`${apiBase}/notifications`);
@@ -290,25 +291,25 @@
         list.innerHTML = "";
 
         if (data.success && data.notifications && data.notifications.length > 0) {
-          const filtered = data.notifications.filter(n => n.topic === topic);
-          console.log(`📑 Notifications filtered for topic "${topic}":`, filtered);
+          // Show all if no topic is selected
+          const filtered = topic ? data.notifications.filter(n => n.topic === topic) : data.notifications;
+          console.log("📑 Notifications to display:", filtered);
 
           if (filtered.length > 0) {
             document.getElementById("noNotifications").classList.add("d-none");
 
             filtered.forEach(n => {
-              console.log("📌 Rendering notification:", n);
               const li = document.createElement("li");
               li.className = "list-group-item";
               li.innerHTML = `
-              <div>
-                <strong>${n.title}</strong><br>${n.body}
-                <div class="mt-1">
-                  <small>📌 Topic: ${n.topic}</small><br>
-                  <small>🕒 ${new Date(n.sent_at).toLocaleString()}</small>
+                <div>
+                  <strong>${n.title}</strong><br>${n.body}
+                  <div class="mt-1">
+                    <small>📌 Topic: ${n.topic}</small><br>
+                    <small>🕒 ${new Date(n.sent_at).toLocaleString()}</small>
+                  </div>
                 </div>
-              </div>
-            `;
+              `;
               list.appendChild(li);
             });
           } else {
@@ -329,11 +330,7 @@
     document.getElementById("notify-tab").addEventListener("click", () => {
       console.log("📢 Notifications tab clicked");
       const selectedTopic = document.getElementById("sendTopic").value;
-      if (selectedTopic) {
-        loadNotifications(selectedTopic);
-      } else {
-        console.warn("⚠️ No topic selected when opening notifications tab");
-      }
+      loadNotifications(selectedTopic);
     });
 
     document.getElementById("sendTopic").addEventListener("change", (e) => {
