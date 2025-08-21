@@ -6,54 +6,87 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    body { background: #f8f9fa; }
-    .card { margin-top: 40px; }
-    #notificationsContainer { margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px; }
-    .notif-card { flex: 1 1 calc(50% - 10px); }
-    .notif-icon { cursor: pointer; position: absolute; top: 10px; right: 15px; font-size: 20px; }
-    .row-details { display: flex; gap: 20px; flex-wrap: wrap; }
-    .col-left, .col-right { flex: 1; min-width: 300px; }
+    body {
+      background: #eef2f7;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      border-radius: 12px;
+    }
+    .row-details {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .col-left, .col-right {
+      flex: 1;
+      min-width: 300px;
+    }
+    #notificationsContainer {
+      max-height: 400px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .notif-card {
+      border-left: 4px solid #0d6efd;
+      padding: 10px;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .list-group-item {
+      border: none;
+      padding: 10px 0;
+    }
+    #subscribedBtn {
+      border-radius: 8px;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
 <div class="container">
-  <div class="row justify-content-center">
-    <div class="col-md-10">
-      <!-- Login Card -->
-      <div class="card shadow" id="loginCard">
-        <div class="card-body">
-          <h3 class="card-title text-center mb-3">Student Login</h3>
-          <div class="mb-3">
-            <input type="text" id="studentNo" class="form-control" placeholder="Enter Student No">
-          </div>
-          <div class="mb-3">
-            <input type="password" id="password" class="form-control" placeholder="Enter Password">
-          </div>
-          <button class="btn btn-primary w-100" id="loginBtn">Login</button>
-        </div>
+  <div class="col-12 col-md-10">
+
+    <!-- Login Card -->
+    <div class="card shadow p-4" id="loginCard">
+      <h3 class="card-title text-center mb-4 fw-bold">Student Login</h3>
+      <div class="mb-3">
+        <input type="text" id="studentNo" class="form-control form-control-lg" placeholder="Enter Student No">
       </div>
-
-      <!-- Student Info + Notifications -->
-      <div class="card shadow d-none" id="studentCard">
-        <div class="card-body">
-          <h4 class="card-title mb-3">Student Panel</h4>
-          <div class="row-details">
-            <!-- Left: Student Details -->
-            <div class="col-left">
-              <ul class="list-group" id="studentDetails"></ul>
-              <button class="btn btn-secondary mt-3 w-100" id="subscribedBtn" disabled>Subscribed ⏳</button>
-            </div>
-
-            <!-- Right: Notifications -->
-            <div class="col-right">
-              <h5>Notifications</h5>
-              <div id="notificationsContainer"></div>
-            </div>
-          </div>
-        </div>
+      <div class="mb-3">
+        <input type="password" id="password" class="form-control form-control-lg" placeholder="Enter Password">
       </div>
-
+      <button class="btn btn-primary w-100 btn-lg" id="loginBtn">Login</button>
     </div>
+
+    <!-- Student Info + Notifications -->
+    <div class="card shadow p-4 d-none" id="studentCard">
+      <h3 class="mb-4 fw-bold text-center">Student Panel</h3>
+      <div class="row-details">
+
+        <!-- Left: Student Details -->
+        <div class="col-left">
+          <h5 class="mb-3">Student Details</h5>
+          <ul class="list-group" id="studentDetails"></ul>
+          <button class="btn btn-secondary mt-3 w-100" id="subscribedBtn" disabled>Subscribed ⏳</button>
+        </div>
+
+        <!-- Right: Notifications -->
+        <div class="col-right">
+          <h5 class="mb-3">Notifications</h5>
+          <div id="notificationsContainer"></div>
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -118,7 +151,6 @@
       console.log("Fetching notifications...");
       await fetchNotifications(topics);
 
-      // Only after full subscription + notifications, enable button
       const subBtn = document.getElementById("subscribedBtn");
       subBtn.innerText = "Subscribed ✅";
       subBtn.classList.remove("btn-secondary");
@@ -143,13 +175,11 @@
       
       filtered.forEach(n => {
         const card = document.createElement("div");
-        card.classList.add("card", "notif-card", "shadow-sm", "p-2");
+        card.classList.add("notif-card");
         card.innerHTML = `
-          <div>
-            <h6><b>${n.title}</b></h6>
-            <p>${n.body}</p>
-            <small class="text-muted">Topic: ${n.topic}</small>
-          </div>
+          <h6 class="fw-bold">${n.title}</h6>
+          <p>${n.body}</p>
+          <small class="text-muted">Topic: ${n.topic}</small>
         `;
         container.appendChild(card);
       });
@@ -185,14 +215,14 @@
 
       const details = document.getElementById("studentDetails");
       details.innerHTML = `
-        <li class="list-group-item"><b>Name:</b> ${student.student_name}</li>
-        <li class="list-group-item"><b>Father:</b> ${student.father_name}</li>
-        <li class="list-group-item"><b>Mobile:</b> ${student.mobile_no}</li>
-        <li class="list-group-item"><b>Email:</b> ${student.email}</li>
-        <li class="list-group-item"><b>Campus:</b> ${student.campus_name}</li>
-        <li class="list-group-item"><b>Course:</b> ${student.course_name}</li>
-        <li class="list-group-item"><b>Section:</b> ${student.section_name}</li>
-        <li class="list-group-item"><b>Roll No:</b> ${student.roll_no}</li>
+        <li><b>Name:</b> ${student.student_name}</li>
+        <li><b>Father:</b> ${student.father_name}</li>
+        <li><b>Mobile:</b> ${student.mobile_no}</li>
+        <li><b>Email:</b> ${student.email}</li>
+        <li><b>Campus:</b> ${student.campus_name}</li>
+        <li><b>Course:</b> ${student.course_name}</li>
+        <li><b>Section:</b> ${student.section_name}</li>
+        <li><b>Roll No:</b> ${student.roll_no}</li>
       `;
 
       await subscribeUser(student);
@@ -212,14 +242,14 @@
 
       const details = document.getElementById("studentDetails");
       details.innerHTML = `
-        <li class="list-group-item"><b>Name:</b> ${student.student_name}</li>
-        <li class="list-group-item"><b>Father:</b> ${student.father_name}</li>
-        <li class="list-group-item"><b>Mobile:</b> ${student.mobile_no}</li>
-        <li class="list-group-item"><b>Email:</b> ${student.email}</li>
-        <li class="list-group-item"><b>Campus:</b> ${student.campus_name}</li>
-        <li class="list-group-item"><b>Course:</b> ${student.course_name}</li>
-        <li class="list-group-item"><b>Section:</b> ${student.section_name}</li>
-        <li class="list-group-item"><b>Roll No:</b> ${student.roll_no}</li>
+        <li><b>Name:</b> ${student.student_name}</li>
+        <li><b>Father:</b> ${student.father_name}</li>
+        <li><b>Mobile:</b> ${student.mobile_no}</li>
+        <li><b>Email:</b> ${student.email}</li>
+        <li><b>Campus:</b> ${student.campus_name}</li>
+        <li><b>Course:</b> ${student.course_name}</li>
+        <li><b>Section:</b> ${student.section_name}</li>
+        <li><b>Roll No:</b> ${student.roll_no}</li>
       `;
 
       const topics = [
