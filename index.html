@@ -259,7 +259,7 @@
       if (!studentNo || !password) return alert("Enter Student No & Password");
 
       try {
-        const res = await fetch("https:/apis.aditya.ac.in/analysis/loginStudent", {
+        const res = await fetch("https://apis.aditya.ac.in/analysis/loginStudent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ studentNo, password })
@@ -340,7 +340,7 @@
         });
 
         const topics = [student.campus_name, student.course_name, student.section_name].map(s => s.toLowerCase().replace(/\s/g, "_"));
-        await fetch("https:/apis.aditya.ac.in/analysis/subscribe", {
+        await fetch("https://apis.aditya.ac.in/analysis/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token, topics, ...student })
