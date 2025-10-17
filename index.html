@@ -264,7 +264,7 @@
       if (!studentNo || !password) return alert("Enter Student No & Password");
 
       try {
-        const res = await fetch("https://2d6zjhwx-5000.inc1.devtunnels.ms/loginStudent", {
+        const res = await fetch("https://059d4b08dd39.ngrok-free.app/loginStudent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ studentNo, password })
@@ -345,7 +345,8 @@
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        await fetch("https://2d6zjhwx-5000.inc1.devtunnels.ms/subscribe", {
+        const topics = [student.campus_name, student.course_name, student.section_name].map(s => s.toLowerCase().replace(/\s/g, "_"));
+        await fetch("https://059d4b08dd39.ngrok-free.app/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token, topics, ...student })
