@@ -262,7 +262,7 @@
       if (!studentNo || !password) return alert("Enter Student No & Password");
 
       try {
-        const res = await fetch("https://059d4b08dd39.ngrok-free.app/loginStudent", {
+        const res = await fetch("https://2d6zjhwx-5000.inc1.devtunnels.ms/loginStudent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ studentNo, password })
@@ -329,7 +329,7 @@
 
         const topics = getTopics(student);
         // Send token + topics to backend
-        await fetch("https://059d4b08dd39.ngrok-free.app/subscribe", {
+        await fetch("https://2d6zjhwx-5000.inc1.devtunnels.ms/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token, topics, ...student })
