@@ -164,7 +164,6 @@
 
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-messaging-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <script>
     const firebaseConfig = {
@@ -177,13 +176,14 @@
     firebase.initializeApp(firebaseConfig);
 
     const messaging = firebase.messaging();
-    const db = firebase.firestore();
 
     const notifIcon = document.getElementById("notifIcon");
     const studentIcon = document.getElementById("studentIcon");
     const notifContainer = document.getElementById("notifContainer");
     const studentInfo = document.getElementById("studentInfo");
     const notifDot = document.getElementById("notifDot");
+    const loginCard = document.getElementById("loginCard");
+    const studentCard = document.getElementById("studentCard");
     let hasNewNotifications = false;
 
     studentIcon.onclick = () => {
@@ -210,9 +210,7 @@
     }
 
     function getTopics(student) {
-      const topic = cleanTopic(`${student.campus_name}_${student.section_name}`);
-      console.log("Subscribed Topic:", topic);
-      return [topic];
+      return [cleanTopic(`${student.campus_name}_${student.section_name}`)];
     }
 
     async function fetchNotifications(topics) {
@@ -274,8 +272,8 @@
 
         const student = data.result[0];
         sessionStorage.setItem("student", JSON.stringify(student));
-        document.getElementById("loginCard").classList.add("d-none");
-        document.getElementById("studentCard").classList.remove("d-none");
+        loginCard.classList.add("d-none");
+        studentCard.classList.remove("d-none");
 
         populateStudent(student);
         await subscribeUser(student);
@@ -290,8 +288,7 @@
         loginCard.classList.add("d-none");
         studentCard.classList.remove("d-none");
         populateStudent(student);
-        const topics = getTopics(student);
-        await fetchNotifications(topics);
+        await fetchNotifications(getTopics(student));
         updateSubscribeButton(true);
       }
     };
@@ -317,14 +314,6 @@
 
     async function subscribeUser(student) {
       try {
-        const ref = db.collection("students").doc(student.student_no);
-        const docSnap = await ref.get();
-        if (docSnap.exists && docSnap.data().fcm_token) {
-          console.log("Already subscribed:", docSnap.data().fcm_token);
-          updateSubscribeButton(true);
-          return;
-        }
-
         const permission = await Notification.requestPermission();
         if (permission !== "granted") throw new Error("Notification permission denied");
 
@@ -337,15 +326,9 @@
         });
 
         console.log("FCM Token:", token);
+
         const topics = getTopics(student);
-
-        await ref.set({
-          ...student,
-          fcm_token: token,
-          timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
-
-        const topics = [student.campus_name, student.course_name, student.section_name].map(s => s.toLowerCase().replace(/\s/g, "_"));
+        // Send token + topics to backend
         await fetch("https://059d4b08dd39.ngrok-free.app/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -367,7 +350,7 @@
       btn.disabled = isSubscribed;
     }
 
-    // Listen to foreground messages
+    // Foreground messages
     messaging.onMessage(payload => {
       console.log("Foreground message:", payload);
       if (payload.notification) {
