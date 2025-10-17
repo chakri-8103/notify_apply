@@ -91,7 +91,6 @@
       justify-content: flex-end;
       gap: 15px;
       margin-bottom: 15px;
-      position: relative;
     }
 
     .icon-tabs i {
@@ -116,20 +115,15 @@
       border-radius: 50%;
       border: 1px solid white;
     }
-
-    #loginCard {
-      margin-bottom: 30px;
-    }
   </style>
 </head>
 
 <body>
-
   <div class="container">
     <div class="row justify-content-center w-100">
       <div class="col-lg-8 col-md-10">
 
-        <!-- Login Card -->
+        <!-- Login -->
         <div class="card shadow p-4" id="loginCard">
           <div class="card-body">
             <h3 class="card-title text-center mb-4">Student Login</h3>
@@ -143,7 +137,7 @@
           </div>
         </div>
 
-        <!-- Student Dashboard -->
+        <!-- Dashboard -->
         <div class="card shadow p-4 d-none" id="studentCard">
           <div class="card-body">
             <div class="icon-tabs">
@@ -157,7 +151,7 @@
                 <ul class="list-group" id="studentDetails"></ul>
                 <button class="btn btn-secondary mt-3 w-100" id="subscribedBtn" disabled>Subscribed ⏳</button>
               </div>
-              <div class="col-right" id="notifContainer" style="display: none;">
+              <div class="col-right" id="notifContainer" style="display:none;">
                 <div id="notificationsContainer"></div>
               </div>
             </div>
@@ -174,92 +168,103 @@
 
   <script>
     const firebaseConfig = {
-      apiKey: "AIzaSyDNn6mTQSSziK0euwazJYp7vQPZoT3ZEPo",
-      authDomain: "callwebview-61c3a.firebaseapp.com",
-      projectId: "callwebview-61c3a",
-      messagingSenderId: "440935657909",
-      appId: "1:440935657909:web:86f4e12e35802f8d91a9fc"
+      apiKey: "AIzaSyC2KIl4oI-3RHlOfQ4sEqQ_jto1djRjbC8",
+      authDomain: "abbhyass-f73ce.firebaseapp.com",
+      projectId: "abbhyass-f73ce",
+      messagingSenderId: "377862942950",
+      appId: "1:377862942950:web:9a5e1cd734c16adfe0cb27"
     };
     firebase.initializeApp(firebaseConfig);
+
     const messaging = firebase.messaging();
     const db = firebase.firestore();
 
-    const studentIcon = document.getElementById("studentIcon");
     const notifIcon = document.getElementById("notifIcon");
-    const notifDot = document.getElementById("notifDot");
-    const studentInfo = document.getElementById("studentInfo");
+    const studentIcon = document.getElementById("studentIcon");
     const notifContainer = document.getElementById("notifContainer");
-
+    const studentInfo = document.getElementById("studentInfo");
+    const notifDot = document.getElementById("notifDot");
     let hasNewNotifications = false;
 
-    studentIcon.addEventListener("click", () => {
+    studentIcon.onclick = () => {
       studentInfo.style.display = "block";
       notifContainer.style.display = "none";
       studentIcon.classList.add("active");
       notifIcon.classList.remove("active");
-    });
+    };
 
-    notifIcon.addEventListener("click", () => {
+    notifIcon.onclick = () => {
       studentInfo.style.display = "none";
       notifContainer.style.display = "flex";
       notifIcon.classList.add("active");
       studentIcon.classList.remove("active");
-
       if (hasNewNotifications) {
-        const notifCards = Array.from(document.getElementById("notificationsContainer").children);
-        const currentNotifs = notifCards.map((card, idx) => ({ id: card.dataset.id || idx }));
-        localStorage.setItem("seenNotifications", JSON.stringify(currentNotifs.map(n => n.id)));
-
+        localStorage.setItem("seenNotifications", Date.now());
         notifDot.style.display = "none";
         hasNewNotifications = false;
       }
-    });
+    };
 
-    function hasUnseenNotifications(notifications) {
-      const seenIds = JSON.parse(localStorage.getItem("seenNotifications") || "[]");
-      return notifications.some(n => !seenIds.includes(n.id));
+    function cleanTopic(str) {
+      return str?.toString().trim().toLowerCase().replace(/\s+/g, "_");
+    }
+
+    function getTopics(student) {
+      const topic = cleanTopic(`${student.campus_name}_${student.section_name}`);
+      console.log("Subscribed Topic:", topic);
+      return [topic];
     }
 
     async function fetchNotifications(topics) {
       try {
-        const res = await fetch("https://59405185-0de8-49bf-9e02-a228b0702df3-00-21difm4dvtrej.spock.replit.dev/notifications");
+        const res = await fetch("https://2d6zjhwx-9000.inc1.devtunnels.ms/notifications");
         const data = await res.json();
-        if (!data.success) return;
+        const all = Array.isArray(data.notifications) ? data.notifications : data;
 
-        const filtered = data.notifications.filter(n => topics.includes(n.topic));
+        const filtered = all.filter(n =>
+          topics.some(t => cleanTopic(n.topic) === t)
+        );
+
         const container = document.getElementById("notificationsContainer");
         container.innerHTML = "";
 
+        filtered.sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
+
         filtered.forEach(n => {
           const card = document.createElement("div");
-          card.classList.add("notif-card", "shadow-sm", "p-3", "mb-2", "bg-light");
-          card.dataset.id = n.id || `${n.title}-${n.topic}`; // unique id
-          card.innerHTML = `<h6 class="fw-bold text-primary">${n.title}</h6>
-                        <p>${n.body}</p>
-                        <small class="text-muted">Topic: ${n.topic}</small>`;
+          card.className = "notif-card";
+          card.innerHTML = `
+            <div class="d-flex align-items-center mb-2">
+              ${n.logoUrl ? `<img src="${n.logoUrl}" class="rounded-circle me-2" style="width:30px;height:30px;">` : ""}
+              <h6 class="fw-bold text-primary mb-0">${n.title || "Untitled"}</h6>
+            </div>
+            <p class="mb-2">${n.body || ""}</p>
+            ${n.image ? `<img src="${n.image}" class="img-fluid rounded mb-2" style="max-height:150px;">` : ""}
+            <small class="text-muted d-block">Topic: ${n.topic}</small>
+            <small class="text-secondary">Sent at: ${new Date(n.sent_at).toLocaleString()}</small>
+          `;
           container.appendChild(card);
         });
 
-        if (hasUnseenNotifications(filtered)) {
+        const lastSeen = parseInt(localStorage.getItem("seenNotifications")) || 0;
+        if (filtered.length && lastSeen < Date.now() - 10000) {
           notifDot.style.display = "block";
           hasNewNotifications = true;
         } else {
           notifDot.style.display = "none";
-          hasNewNotifications = false;
         }
-
       } catch (err) {
-        console.error("Error fetching notifications:", err.message);
+        console.error("Notification error:", err.message);
       }
     }
 
-    document.getElementById("loginBtn").addEventListener("click", async () => {
+    document.getElementById("loginBtn").onclick = async () => {
       const studentNo = document.getElementById("studentNo").value.trim();
       const password = document.getElementById("password").value.trim();
       if (!studentNo || !password) return alert("Enter Student No & Password");
 
       try {
-        const res = await fetch("https://059d4b08dd39.ngrok-free.app/loginStudent", {
+        const res = await fetch("https://2d6zjhwx-5000.inc1.devtunnels.ms/loginStudent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ studentNo, password })
@@ -272,91 +277,105 @@
         document.getElementById("loginCard").classList.add("d-none");
         document.getElementById("studentCard").classList.remove("d-none");
 
-        populateStudentDetails(student);
+        populateStudent(student);
         await subscribeUser(student);
-
       } catch (err) {
         alert("Login Error: " + err.message);
       }
-    });
+    };
 
-    window.addEventListener("load", async () => {
+    window.onload = async () => {
       const student = JSON.parse(sessionStorage.getItem("student") || null);
       if (student) {
-        document.getElementById("loginCard").classList.add("d-none");
-        document.getElementById("studentCard").classList.remove("d-none");
-        populateStudentDetails(student);
-        const topics = [student.campus_name, student.course_name, student.section_name].map(s => s.toLowerCase().replace(/\s/g, "_"));
+        loginCard.classList.add("d-none");
+        studentCard.classList.remove("d-none");
+        populateStudent(student);
+        const topics = getTopics(student);
         await fetchNotifications(topics);
-
-        const subBtn = document.getElementById("subscribedBtn");
-        subBtn.innerText = "Subscribed ✅";
-        subBtn.classList.remove("btn-secondary");
-        subBtn.classList.add("btn-success");
-        subBtn.disabled = false;
+        updateSubscribeButton(true);
       }
-    });
+    };
 
-    // Populate student details
-    function populateStudentDetails(student) {
-      const details = document.getElementById("studentDetails");
-      details.innerHTML = `
-    <li class="list-group-item"><b>Name:</b> ${student.student_name}</li>
-    <li class="list-group-item"><b>Father:</b> ${student.father_name}</li>
-    <li class="list-group-item"><b>Mobile:</b> ${student.mobile_no}</li>
-    <li class="list-group-item"><b>Email:</b> ${student.email}</li>
-    <li class="list-group-item"><b>Campus:</b> ${student.campus_name}</li>
-    <li class="list-group-item"><b>Course:</b> ${student.course_name}</li>
-    <li class="list-group-item"><b>Section:</b> ${student.section_name}</li>
-    <li class="list-group-item"><b>Roll No:</b> ${student.roll_no}</li>
-  `;
+    function populateStudent(student) {
+      const list = document.getElementById("studentDetails");
+      list.innerHTML = `
+        <li class="list-group-item"><b>Name:</b> ${student.student_name}</li>
+        <li class="list-group-item"><b>Father:</b> ${student.father_name}</li>
+        <li class="list-group-item"><b>Mobile:</b> ${student.mobile_no}</li>
+        <li class="list-group-item"><b>Email:</b> ${student.email}</li>
+        <li class="list-group-item"><b>Campus:</b> ${student.campus_name}</li>
+        <li class="list-group-item"><b>Course:</b> ${student.course_name}</li>
+        <li class="list-group-item"><b>Section:</b> ${student.section_name}</li>
+        <li class="list-group-item"><b>Roll No:</b> ${student.roll_no}</li>
+      `;
     }
 
-    // Auto-refresh notifications every second
     setInterval(async () => {
       const student = JSON.parse(sessionStorage.getItem("student") || null);
-      if (student) {
-        const topics = [student.campus_name, student.course_name, student.section_name].map(s => s.toLowerCase().replace(/\s/g, "_"));
-        await fetchNotifications(topics);
-      }
-    }, 1000);
+      if (student) await fetchNotifications(getTopics(student));
+    }, 5000);
 
-    // Firebase subscription
     async function subscribeUser(student) {
       try {
+        const ref = db.collection("students").doc(student.student_no);
+        const docSnap = await ref.get();
+        if (docSnap.exists && docSnap.data().fcm_token) {
+          console.log("Already subscribed:", docSnap.data().fcm_token);
+          updateSubscribeButton(true);
+          return;
+        }
+
         const permission = await Notification.requestPermission();
         if (permission !== "granted") throw new Error("Notification permission denied");
-        const registration = await navigator.serviceWorker.register('firebase-messaging-sw.js');
+
+        const registration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+        console.log("Service Worker Registered");
+
         const token = await messaging.getToken({
-          vapidKey: 'BEBSBvKWLGx6At08ltRQ9Q-r2dNG7xUHIXQLOZMT-8va2QlL02yTBxmahf58Dgu3x0_uIbinrS2PS7Zes8yzZS4',
+          vapidKey: 'BLMcf7mfo58pZO10XgmKWmLpl61lLzUE256KAwD175k1lu_n4MWvKcbo2enXpqWdnXWdRKDJ9WJXsZQLAsVVaG4',
           serviceWorkerRegistration: registration
         });
-        if (!token) throw new Error("Failed to get FCM token");
 
-        await db.collection("students").doc(student.student_no).set({
+        console.log("FCM Token:", token);
+        const topics = getTopics(student);
+
+        await ref.set({
           ...student,
           fcm_token: token,
           timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        const topics = [student.campus_name, student.course_name, student.section_name].map(s => s.toLowerCase().replace(/\s/g, "_"));
-        await fetch("https://059d4b08dd39.ngrok-free.app/subscribe", {
+        await fetch("https://2d6zjhwx-5000.inc1.devtunnels.ms/subscribe", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ token, topics, ...student })
         });
+
         await fetchNotifications(topics);
-
-        const subBtn = document.getElementById("subscribedBtn");
-        subBtn.innerText = "Subscribed ✅";
-        subBtn.classList.remove("btn-secondary");
-        subBtn.classList.add("btn-success");
-        subBtn.disabled = false;
-
+        updateSubscribeButton(true);
       } catch (err) {
         console.error("Subscription failed:", err.message);
       }
     }
+
+    function updateSubscribeButton(isSubscribed) {
+      const btn = document.getElementById("subscribedBtn");
+      btn.innerText = isSubscribed ? "Subscribed ✅" : "Subscribed ⏳";
+      btn.classList.toggle("btn-success", isSubscribed);
+      btn.classList.toggle("btn-secondary", !isSubscribed);
+      btn.disabled = isSubscribed;
+    }
+
+    // Listen to foreground messages
+    messaging.onMessage(payload => {
+      console.log("Foreground message:", payload);
+      if (payload.notification) {
+        new Notification(payload.notification.title, {
+          body: payload.notification.body,
+          icon: payload.notification.icon || '/icon.png'
+        });
+      }
+    });
   </script>
 </body>
 

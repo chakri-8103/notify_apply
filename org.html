@@ -53,12 +53,14 @@
     <div id="adminPanel" class="d-none">
       <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
         <li class="nav-item">
-          <button class="nav-link active" id="topics-tab" data-bs-toggle="tab" data-bs-target="#topics" type="button">📂
-            Topics</button>
+          <button class="nav-link active" id="topics-tab" data-bs-toggle="tab" data-bs-target="#topics" type="button">
+            📂 Topics
+          </button>
         </li>
         <li class="nav-item">
-          <button class="nav-link" id="notify-tab" data-bs-toggle="tab" data-bs-target="#notify" type="button">📢
-            Notifications</button>
+          <button class="nav-link" id="notify-tab" data-bs-toggle="tab" data-bs-target="#notify" type="button">
+            📢 Notifications
+          </button>
         </li>
       </ul>
 
@@ -121,7 +123,7 @@
   </main>
 
   <script>
-    const apiBase = "https://59405185-0de8-49bf-9e02-a228b0702df3-00-21difm4dvtrej.spock.replit.dev";
+    const apiBase = "https://2d6zjhwx-9000.inc1.devtunnels.ms";
 
     function showAdminPanel() {
       document.getElementById("loginCard").classList.add("d-none");
@@ -135,7 +137,7 @@
       const pass = document.getElementById("password").value.trim();
 
       if (user === "admin" && pass === "1234") {
-        sessionStorage.setItem("adminLoggedIn", "true"); // session storage
+        sessionStorage.setItem("adminLoggedIn", "true");
         showAdminPanel();
       } else {
         alert("❌ Invalid credentials!");
@@ -148,13 +150,19 @@
       const description = document.getElementById("description").value;
       if (!topic || !description) { alert("⚠️ Please fill all fields."); return; }
       try {
-        const res = await fetch(`${apiBase}/create-topic`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, description }) });
+        const res = await fetch(`${apiBase}/create-topic`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, description })
+        });
         const data = await res.json();
         alert(data.message);
         document.getElementById("topicName").value = "";
         document.getElementById("description").value = "";
         loadTopics();
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     async function loadTopics() {
@@ -164,7 +172,16 @@
         const list = document.getElementById("topicsList");
         const select = document.getElementById("sendTopic");
         list.innerHTML = "";
-        select.innerHTML = `<option value="" disabled selected>Select Topic</option>`;
+
+        // Replace select dropdown with text input
+        select.outerHTML = `<input type="text" id="topicInput" class="form-control mb-3" placeholder="Enter Topic ID">`;
+
+        // Re-attach input listener AFTER replacing
+        setTimeout(() => {
+          const topicInput = document.getElementById("topicInput");
+          topicInput.addEventListener("input", () => loadNotifications());
+        }, 100);
+
         if (data.topics) {
           data.topics.forEach(t => {
             const li = document.createElement("li");
@@ -172,15 +189,12 @@
             li.innerHTML = `<div><strong>${t.topic}</strong><br><small class="text-muted">${t.description}</small></div>
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteTopic('${t.topic}')">Delete</button>`;
             list.appendChild(li);
-
-            const opt = document.createElement("option");
-            opt.value = t.topic;
-            opt.textContent = t.topic;
-            select.appendChild(opt);
           });
-          loadNotifications(); // Load notifications for all topics by default
+          loadNotifications();
         }
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     async function deleteTopic(topic) {
@@ -190,12 +204,14 @@
         const data = await res.json();
         alert(data.message);
         loadTopics();
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     // ---------- NOTIFICATIONS ----------
     async function sendNotification() {
-      const topic = document.getElementById("sendTopic").value;
+      const topic = document.getElementById("topicInput").value;
       const title = document.getElementById("title").value;
       const body = document.getElementById("body").value;
       if (!topic || !title || !body) { alert("⚠️ Please fill all fields."); return; }
@@ -204,13 +220,20 @@
       btn.disabled = true; btn.textContent = "Sending...";
 
       try {
-        const res = await fetch(`${apiBase}/send-to-topic`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, title, body }) });
+        const res = await fetch(`${apiBase}/send-to-topic`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ topic, title, body })
+        });
         const data = await res.json();
         alert(data.message);
         document.getElementById("title").value = "";
         document.getElementById("body").value = "";
         loadNotifications();
-      } catch (err) { console.error(err); alert("❌ Failed to send notification."); }
+      } catch (err) {
+        console.error(err);
+        alert("❌ Failed to send notification.");
+      }
 
       btn.disabled = false; btn.textContent = "Send";
     }
@@ -223,27 +246,36 @@
         list.innerHTML = "";
 
         if (data.success && data.notifications) {
-          const selectedTopic = document.getElementById("sendTopic").value;
-          const filtered = selectedTopic ? data.notifications.filter(n => n.topic === selectedTopic) : data.notifications;
+          const topicInput = document.getElementById("topicInput");
+          const selectedTopic = topicInput ? topicInput.value.trim() : "";
+
+          const filtered = selectedTopic
+            ? data.notifications.filter(n => n.topic === selectedTopic)
+            : data.notifications;
 
           if (filtered.length > 0) {
             document.getElementById("noNotifications").classList.add("d-none");
             filtered.forEach(n => {
               const li = document.createElement("li");
               li.className = "list-group-item";
-              li.innerHTML = `<div><strong>${n.title}</strong><br>${n.body}<div class="mt-1"><small>📌 Topic: ${n.topic}</small><br>
+              li.innerHTML = `<div><strong>${n.title}</strong><br>${n.body}
+                              <div class="mt-1"><small>📌 Topic: ${n.topic}</small><br>
                               <small>🕒 ${new Date(n.sent_at).toLocaleString()}</small></div></div>`;
               list.appendChild(li);
             });
           } else {
             document.getElementById("noNotifications").classList.remove("d-none");
           }
-        } else { document.getElementById("noNotifications").classList.remove("d-none"); }
-      } catch (err) { console.error(err); document.getElementById("noNotifications").classList.remove("d-none"); }
+        } else {
+          document.getElementById("noNotifications").classList.remove("d-none");
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("noNotifications").classList.remove("d-none");
+      }
     }
 
     document.getElementById("notify-tab").addEventListener("click", () => loadNotifications());
-    document.getElementById("sendTopic").addEventListener("change", () => loadNotifications());
 
     // ---------- AUTO LOGIN FOR SESSION ----------
     window.addEventListener("DOMContentLoaded", () => {
@@ -253,4 +285,5 @@
     });
   </script>
 </body>
+
 </html>
